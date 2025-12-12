@@ -1,22 +1,27 @@
 import os
 
-from dotenv import load_dotenv
 from flask import Flask
+from dotenv import load_dotenv
 
-from board import pages, posts, database
+from board import pages
+from .database import db
 
 load_dotenv()
 
-
 def create_app():
     app = Flask(__name__)
-    app.config.from_prefixed_env()
     
-    database.init_app(app)
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret")
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    
+    db.init_app(app)
+    
+    @app.cli.command("init-db")
+    def init_db():
+        db.create_all()
+        print("Database created!")
 
     app.register_blueprint(pages.bp)
-    app.register_blueprint(posts.bp)
-    print(f"Current Enviroment: {os.getenv('ENVIROMENT')}")
-    print(f"Using Database: {app.config.get('DATABASE')}")
-
+    
     return app

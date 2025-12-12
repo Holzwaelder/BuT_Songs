@@ -1,32 +1,12 @@
-import sqlite3
-import click
-from flask import Flask, current_app, g
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
-def init_app(app: Flask):
-    app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
+db = SQLAlchemy()
 
-@click.command("init-db")
-def init_db_command() -> None:
-    db = get_db()
-
-    with current_app.open_resource("schema.sql") as f:
-        db.executescript(f.read().decode("utf-8"))
-
-    click.echo("You successfully initialized the database!")
-
-def get_db() -> sqlite3.Connection:
-    if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"],
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        g.db.row_factory = sqlite3.Row
-
-    return g.db
-
-def close_db(e=None) -> None:
-    db = g.pop("db", None)
-
-    if db is not None:
-        db.close()
+class Song(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.Integer, unique=True, nullable=True)
+    title = db.Column(db.String(50), nullable=True)
+    artist = db.Column(db.String(50), nullable=True)
+    folder = db.Column(db.String(20))
+    created = db.Column(db.DateTime, default=datetime.now)
